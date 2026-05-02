@@ -1,0 +1,114 @@
+services:
+
+  # ── PHP / Laravel ──────────────────────────────────────────
+  # Ejecuta PHP-FPM. No tiene puerto público — Nginx le habla
+  # internamente por la red uts_network en el puerto 9000.
+  php:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    container_name: uts_php
+    working_dir: /var/www
+    volumes:
+      - ./laravel:/var/www        # tu código Laravel en tiempo real
+    environment:
+      - TZ=America/Bogota
+    networks:
+      - uts_network
+    depends_on:
+      - postgres
+
+  # ── Nginx ──────────────────────────────────────────────────
+  # Único punto de entrada HTTP. Puerto 8080 en tu Mac.
+  # Enruta a PHP para Laravel, a FastAPI para la IA.
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: uts_nginx
+    ports:
+      - "8080:80"                 # localhost:8080 → app Laravel
+    volumes:
+      - ./laravel:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - fastapi
+    networks:
+      - uts_network
+
+  # ── Node / Vite ────────────────────────────────────────────
+  # Solo para desarrollo. Compila Vue y sirve hot reload.
+  # En producción este contenedor no existe.
+  node:
+    image: node:20
+    platform: linux/amd64
+    container_name: uts_node
+    working_dir: /var/www
+    volumes:
+      - ./laravel:/var/www
+      - node_modules:/var/www/node_modules
+      - pnpm_store:/root/.local/share/pnpm
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=3072
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_HOST=0.0.0.0
+    ports:
+      - "5173:5173"
+    command: sh -lc "corepack enable && pnpm config set store-dir /root/.local/share/pnpm && pnpm install && pnpm run dev -- --host 0.0.0.0 --port 5173"
+    networks:
+      - uts_network
+
+  # ── PostgreSQL ─────────────────────────────────────────────
+  # Base de datos. Solo accesible dentro de uts_network.
+  # Puerto 5432 expuesto para que puedas conectarte con TablePlus.
+  postgres:
+    image: postgres:16-alpine
+    container_name: uts_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"               # acceso desde TablePlus en tu Mac
+    environment:
+      POSTGRES_DB: uts_db
+      POSTGRES_USER: uts_user
+      POSTGRES_PASSWORD: secret
+      TZ: America/Bogota
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - uts_network
+
+  # ── FastAPI ────────────────────────────────────────────────
+  # Microservicio de IA. Laravel le habla por http://uts_fastapi:8000
+  # dentro de la red. Puerto 8000 expuesto para pruebas directas.
+  fastapi:
+    build:
+      context: ./ai-service
+      dockerfile: ../docker/fastapi/Dockerfile
+    container_name: uts_fastapi
+    restart: unless-stopped
+    ports:
+      - "8000:8000"               # localhost:8000/docs → documentación
+    volumes:
+      - ./ai-service:/app         # hot reload — cambios sin reconstruir
+      - chroma_data:/app/chroma_db
+    env_file:
+      - ./ai-service/.env
+    environment:
+      - TZ=America/Bogota
+    networks:
+      - uts_network
+
+# ── Volúmenes persistentes ─────────────────────────────────
+# Sin esto, cada vez que bajas los contenedores pierdes los datos.
+volumes:
+  postgres_data:    # datos de PostgreSQL
+  chroma_data:      # vectores de ChromaDB
+  node_modules:    # ← agregar
+  pnpm_store:      # ← agregar
+
+# ── Red interna ────────────────────────────────────────────
+# Todos los contenedores se hablan por nombre de servicio.
+# php, nginx, postgres, fastapi son hostnames válidos entre sí.
+networks:
+  uts_network:
+    driver: bridge
+    name: uts_network

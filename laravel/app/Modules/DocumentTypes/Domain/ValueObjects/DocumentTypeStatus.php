@@ -1,0 +1,52 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Modules\DocumentTypes\Domain\ValueObjects;
+
+enum DocumentTypeStatus: string
+{
+    case Active = '1';
+    case Inactive = '0';
+
+    public static function fromMixed(mixed $value): self
+    {
+        if ($value instanceof self) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+            return in_array($normalized, ['1', 'true', 't', 'yes', 'y'], true)
+                ? self::Active
+                : self::Inactive;
+        }
+
+        if (is_bool($value)) {
+            return $value ? self::Active : self::Inactive;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return ((int) $value) === 1 ? self::Active : self::Inactive;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN) ? self::Active : self::Inactive;
+    }
+
+    public function description(): string
+    {
+        return match ($this) {
+            self::Active => 'ACTIVO',
+            self::Inactive => 'INACTIVO',
+        };
+    }
+    public function value(): string
+    {
+        return $this->value;
+    }
+
+    public function toBool(): bool
+    {
+        return $this === self::Active;
+    }
+    
+}
