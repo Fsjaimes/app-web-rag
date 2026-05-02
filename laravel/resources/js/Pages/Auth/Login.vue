@@ -77,9 +77,6 @@ export default {
                                 <div v-if="status" class="alert alert-success text-success">
                                     {{ status }}
                                 </div>
-                                <div v-if="$page.props.errors?.sso" class="alert alert-danger text-danger">
-                                    {{ $page.props.errors.sso }}
-                                </div>
                                 <div v-if="$page.props.errors?.tenant" class="alert alert-danger text-danger">
                                     {{ $page.props.errors.tenant }}
                                 </div>
@@ -121,7 +118,7 @@ export default {
                                             <div class="signin-other-title">
                                                 <h5 class="fs-13 mb-4 title">Suite (SSO)</h5>
                                             </div>
-                                            <Link :href="route('sso.redirect')" class="btn btn-primary w-100">
+                                            <Link :href="route('login')" class="btn btn-primary w-100">
                                                 Entrar con cuenta Suite
                                             </Link>
                                         </div>
