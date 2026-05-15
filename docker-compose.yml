@@ -39,7 +39,7 @@ services:
   # Solo para desarrollo. Compila Vue y sirve hot reload.
   # En producción este contenedor no existe.
   node:
-    image: node:20
+    image: node:22
     platform: linux/amd64
     container_name: uts_node
     working_dir: /var/www
@@ -76,6 +76,27 @@ services:
     networks:
       - uts_network
 
+  # ── pgAdmin ────────────────────────────────────────────────
+  # Interfaz web para gestionar PostgreSQL. Puerto 5050 en tu Mac.
+  # Acceso: http://localhost:5050  →  admin@uts.com / admin
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: uts_pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@uts.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"    # modo desktop, sin login obligatorio
+      TZ: America/Bogota
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - uts_network
+
   # ── FastAPI ────────────────────────────────────────────────
   # Microservicio de IA. Laravel le habla por http://uts_fastapi:8000
   # dentro de la red. Puerto 8000 expuesto para pruebas directas.
@@ -102,8 +123,9 @@ services:
 volumes:
   postgres_data:    # datos de PostgreSQL
   chroma_data:      # vectores de ChromaDB
-  node_modules:    # ← agregar
-  pnpm_store:      # ← agregar
+  node_modules:     # módulos Node/pnpm
+  pnpm_store:       # caché pnpm
+  pgadmin_data:     # configuración y servidores guardados de pgAdmin
 
 # ── Red interna ────────────────────────────────────────────
 # Todos los contenedores se hablan por nombre de servicio.

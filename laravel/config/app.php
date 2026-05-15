@@ -172,6 +172,8 @@ return [
         App\Providers\JetstreamServiceProvider::class,
         //Services Providers
         App\Modules\DocumentTypes\DocumentTypesServiceProvider::class,
+        App\Modules\AcademicDocuments\AcademicDocumentsServiceProvider::class,
+        App\Modules\Assistants\AssistantsServiceProvider::class,
     ])->toArray(),
 
     /*
