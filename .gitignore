@@ -1,0 +1,31 @@
+# Variables de entorno y archivos sensibles
+.env
+.env.*
+!.env.example
+!.env.testing
+
+# Claves y certificados
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Credenciales
+credentials.json
+secrets.json
+service-account*.json
+
+# Archivos de configuración local con secretos
+*.local
+
+# IDEs y editores
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
