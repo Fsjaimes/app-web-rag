@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Assistant\Domain\Repositories;
+namespace App\Modules\Assistants\Domain\Repositories;
 
-use App\Modules\Assistant\Domain\Entities\Message;
+use App\Modules\Assistants\Domain\Entities\Message;
 
 interface MessageRepositoryInterface
 {

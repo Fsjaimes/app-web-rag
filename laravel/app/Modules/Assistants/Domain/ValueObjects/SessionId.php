@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Assistant\Domain\ValueObjects;
+namespace App\Modules\Assistants\Domain\ValueObjects;
 
 /**
  * Value Object que representa el identificador de sesión

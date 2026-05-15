@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Assistant\Domain\Repositories;
+namespace App\Modules\Assistants\Domain\Repositories;
 
-use App\Modules\Assistant\Domain\Entities\Conversation;
+use App\Modules\Assistants\Domain\Entities\Conversation;
 
 interface ConversationRepositoryInterface
 {
