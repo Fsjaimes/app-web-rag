@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Assistants\Application\Handlers;
 
 use App\Modules\Assistants\Application\Commands\AskQuestionCommand;
+use App\Modules\Assistants\Application\DTOs\ChatResponseDTO;
 use App\Modules\Assistants\Application\DTOs\MessageDTO;
 use App\Modules\Assistants\Application\DTOs\AskQuestionDTO;
 use App\Modules\Assistants\Domain\Entities\Conversation;
@@ -33,7 +34,7 @@ final class AskQuestionHandler
         private readonly AIAssistantServiceInterface     $assistantService,
     ) {}
 
-    public function handle(AskQuestionCommand $command): MessageDTO
+    public function handle(AskQuestionCommand $command): ChatResponseDTO
     {
         $dto = $command->dto;
 
@@ -70,8 +71,11 @@ final class AskQuestionHandler
         );
         $this->messageRepository->save($assistantMessage);
 
-        // 6. Devolver solo el mensaje de respuesta
-        return MessageDTO::fromEntity($assistantMessage);
+        // 6. Devolver el mensaje y el UUID de la conversación
+        return new ChatResponseDTO(
+            conversationUuid: $conversation->uuid(),
+            message:          MessageDTO::fromEntity($assistantMessage),
+        );
     }
 
     /**
