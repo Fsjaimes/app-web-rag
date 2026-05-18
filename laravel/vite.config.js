@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { fileURLToPath, URL } from 'node:url';
 import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
 
@@ -29,8 +30,9 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            '@assets': '/resources/', // Update this with the correct path to your images
-            '@favicon': '/resources/images/', // Update this with the correct path to your images
+            '@':        fileURLToPath(new URL('./resources/js', import.meta.url)),
+            '@assets':  fileURLToPath(new URL('./resources', import.meta.url)),
+            '@favicon': fileURLToPath(new URL('./resources/images', import.meta.url)),
         },
     },
 });

@@ -224,69 +224,14 @@ export default {
         <li class="menu-title">
           <span data-key="t-menu"> {{ $t("t-menu") }}</span>
         </li>
-        <Link class="nav-link menu-link" href="/productos" data-key="t-products">
-          <i class="ri-stack-line"></i>
-          <span data-key="t-products">{{ $t("t-products") }}</span>
+        <Link class="nav-link menu-link" href="/chat">
+          <i class="ri-chat-3-line"></i>
+          <span data-key="t-chat">{{ $t("t-chat") }}</span>
         </Link>
-        <Link class="nav-link menu-link" href="/listas-precios">
-          <i class="ri-price-tag-3-line"></i>
-          <span data-key="t-price-lists">{{ $t("t-price-lists") }}</span>
-        </Link>
-        <Link
-          class="nav-link menu-link"
-          href="#documents"
-          data-bs-toggle="collapse"
-          role="button"
-          aria-expanded="false"
-          aria-controls="documents"
-        >
+        <Link class="nav-link menu-link" href="/documentos-academicos">
           <i class="ri-file-list-3-line"></i>
-          <span data-key="t-documents"> {{ $t("t-documents") }}</span>
+          <span data-key="t-documents">{{ $t("t-documents") }}</span>
         </Link>
-        <div class="collapse menu-dropdown" id="documents">
-          <ul class="nav nav-sm flex-column">
-            <li
-              v-for="documentType in documentMenuTypes"
-              :key="documentType.prefix"
-              class="nav-item"
-            >
-              <Link :href="'/documentos/' + documentType.prefix" class="nav-link custom-abc">
-                {{ documentType.name }}
-              </Link>
-            </li>
-          </ul>
-        </div>
-        <Link
-          class="nav-link menu-link"
-          href="#configuration"
-          data-bs-toggle="collapse"
-          role="button"
-          aria-expanded="false"
-          aria-controls="configuration"
-        >
-          <i class="ri-settings-2-line"></i>
-          <span data-key="t-configuration"> {{ $t("t-configuration") }}</span>
-        </Link>
-        <div class="collapse menu-dropdown" id="configuration">
-          <ul class="nav nav-sm flex-column">
-            <li class="nav-item">
-              <Link
-                href="/categorias-productos"
-                class="nav-link custom-abc"
-                data-key="t-categories"
-              >
-                {{ $t("t-categories") }}
-              </Link>
-              <Link href="/bodegas" class="nav-link custom-abc" data-key="t-warehouses"> {{ $t("t-warehouses") }} </Link>
-            </li>
-            <li class="nav-item">
-              <Link href="/lotes" class="nav-link custom-abc" data-key="t-lots"> {{ $t("t-lots") }} </Link>
-            </li>
-            <li class="nav-item">
-              <Link href="/tipos-documentos" class="nav-link custom-abc" data-key="t-document-types"> {{ $t("t-document-types") }} </Link>
-            </li>
-          </ul>
-        </div>
       </ul>
     </template>
   </BContainer>

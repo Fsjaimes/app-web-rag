@@ -21,14 +21,12 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $table = 'users';
 
     /**
-     * En tests PHPUnit usa la conexión por defecto (migraciones Jetstream locales).
-     * En runtime la app hija lee usuarios del landlord PostgreSQL de Suite.
+     * UTS Assistant es una aplicación standalone — usa siempre la
+     * conexión por defecto (uts_db). Sin multi-tenancy en este módulo.
      */
     public function getConnectionName(): ?string
     {
-        return app()->runningUnitTests()
-            ? config('database.default')
-            : 'landlord';
+        return config('database.default');
     }
 
     protected $fillable = [

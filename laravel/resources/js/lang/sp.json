@@ -1,13 +1,6 @@
 {
   "t-menu": "Menú",
 
-  "t-products": "Productos",
-  "t-price-lists": "Listas Precios",
-  "t-configuration": "Configuración",
-  "t-categories": "Categorías Productos",
-
-  "t-warehouses": "Bodegas",
-  "t-lots": "Lotes",
-  "t-document-types": "Tipos Documentos",
-  "t-documents": "Documentos"
+  "t-chat": "Chat",
+  "t-documents": "Documentos Académicos"
 }

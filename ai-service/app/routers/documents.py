@@ -4,7 +4,7 @@ from app.services import pdf_processor, vector_store, llm
 from app.config import settings
 import uuid as uuid_lib
 
-router = APIRouter(prefix="/", tags=["documents"])
+router = APIRouter(tags=["documents"])
 
 
 @router.post("/index-document", response_model=IndexDocumentResponse)

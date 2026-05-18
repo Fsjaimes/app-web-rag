@@ -3,7 +3,7 @@ from app.schemas.chat import AskRequest, AskResponse, Source
 from app.services import vector_store, llm
 from app.config import settings
 
-router = APIRouter(prefix="/", tags=["chat"])
+router = APIRouter(tags=["chat"])
 
 
 @router.post("/ask", response_model=AskResponse)
