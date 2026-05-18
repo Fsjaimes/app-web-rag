@@ -4,6 +4,7 @@ import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
+import loginBg from '@assets/images/UTS_Edificio.jpg';
 
 defineProps({
     canResetPassword: Boolean,
@@ -40,7 +41,7 @@ export default {
     <Head title="Log in" />
 
     <div class="auth-page-wrapper pt-5">
-        <div class="auth-one-bg-position auth-one-bg" id="auth-particles">
+        <div class="auth-one-bg-position auth-one-bg" :style="{ backgroundImage: `url(${loginBg})` }" id="auth-particles">
             <div class="bg-overlay"></div>
 
             <div class="shape">
@@ -54,13 +55,13 @@ export default {
             <BContainer>
                 <BRow>
                     <BCol lg="12">
-                        <div class="text-center mt-sm-5 mb-4 text-white-50">
+                        <div class="text-center mt-sm-5 mb-0 text-white-50">
                             <div>
                                 <Link href="/" class="d-inline-block auth-logo">
-                                <img src="@assets/images/logo-light.png" alt="" height="20">
+                                <img src="@assets/images/logo-blanco-UTS1.png" alt="" height="140">
                                 </Link>
                             </div>
-                            <p class="mt-3 fs-15 fw-medium">Premium Admin & Dashboard Template</p>
+                            <p class="fs-15 fw-medium my-0">UTS Assistant</p>
                         </div>
                     </BCol>
                 </BRow>
@@ -71,8 +72,8 @@ export default {
 
                             <BCardBody class="p-4">
                                 <div class="text-center mt-2">
-                                    <h5 class="text-primary">Welcome Back !</h5>
-                                    <p class="text-muted">Sign in to continue to Velzon.</p>
+                                    <h5 class="text-primary">Bienvenido de nuevo!</h5>
+                                    <p class="text-muted">Ingresa para continuar.</p>
                                 </div>
                                 <div v-if="status" class="alert alert-success text-success">
                                     {{ status }}
@@ -85,18 +86,17 @@ export default {
 
                                         <div class="mb-3">
                                             <InputLabel for="email" value="Email" />
-                                            <TextInput id="email" v-model="form.email" type="email" class="form-control" autofocus placeholder="Please enter email" autocomplete="email" required :class="{ 'is-invalid': form.errors.email }" />
+                                            <TextInput id="email" v-model="form.email" type="email" class="form-control" autofocus placeholder="Ingrese su email" autocomplete="email" required :class="{ 'is-invalid': form.errors.email }" />
                                             <InputError :message="form.errors.email" />
                                         </div>
 
                                         <div class="mb-3">
                                             <div class="float-end">
-                                                <Link v-if="canResetPassword" :href="route('password.request')" class="text-muted">Forgot
-                                                password?</Link>
+                                                <Link v-if="canResetPassword" :href="route('password.request')" class="text-muted">Olvidé mi contraseña</Link>
                                             </div>
-                                            <InputLabel for="password" value="Password" />
+                                            <InputLabel for="password" value="Contraseña" />
                                             <div class="position-relative auth-pass-inputgroup mb-3">
-                                                <input :type="togglePassword ? 'text' : 'password'" class="form-control pe-5" placeholder="Enter password" id="password-input" v-model="form.password" autocomplete="password" required :class="{ 'is-invalid': form.errors.password }">
+                                                <input :type="togglePassword ? 'text' : 'password'" class="form-control pe-5" placeholder="Ingrese su contraseña" id="password-input" v-model="form.password" autocomplete="password" required :class="{ 'is-invalid': form.errors.password }">
                                                 <BButton variant="link" class="position-absolute end-0 top-0 text-decoration-none text-muted shadow-none" type="button" id="password-addon" @click="togglePassword = !togglePassword">
                                                     <i class="ri-eye-fill align-middle"></i>
                                                 </BButton>
@@ -104,23 +104,14 @@ export default {
                                             </div>
                                         </div>
 
-                                        <div class="form-check">
+                                        <!-- <div class="form-check">
                                             <Checkbox v-model:checked="form.remember" name="remember" class="form-check-input" id="auth-remember-check" />
                                             <label class="form-check-label" for="auth-remember-check">Remember
                                                 me</label>
-                                        </div>
+                                        </div> -->
 
                                         <div class="mt-4">
-                                            <BButton variant="success" class="w-100" type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">Sign In</BButton>
-                                        </div>
-
-                                        <div class="mt-4 text-center">
-                                            <div class="signin-other-title">
-                                                <h5 class="fs-13 mb-4 title">Suite (SSO)</h5>
-                                            </div>
-                                            <Link :href="route('login')" class="btn btn-primary w-100">
-                                                Entrar con cuenta Suite
-                                            </Link>
+                                            <BButton variant="success" class="w-100" type="submit" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">Ingresar</BButton>
                                         </div>
                                     </form>
                                 </div>
@@ -143,7 +134,7 @@ export default {
                 <BRow>
                     <BCol lg="12">
                         <div class="text-center">
-                            <p class="mb-0 text-muted">&copy; {{ new Date().getFullYear() }} Velzon. Crafted with <i class="mdi mdi-heart text-danger"></i> by Themesbrand</p>
+                            <p class="mb-0 text-muted">&copy; {{ new Date().getFullYear() }} UTS. Desarrollado con <i class="mdi mdi-heart text-danger"></i> by Frank Jaimes</p>
                         </div>
                     </BCol>
                 </BRow>

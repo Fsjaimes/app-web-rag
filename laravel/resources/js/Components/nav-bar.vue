@@ -2,7 +2,7 @@
 import { layoutMethods } from "@/state/helpers";
 import { Link, router } from '@inertiajs/vue3';
 const logout = () => {
-  router.post(route('sso.client.logout', { sso_logout: 1 }));
+  router.post(route('logout'));
 };
 </script>
 
