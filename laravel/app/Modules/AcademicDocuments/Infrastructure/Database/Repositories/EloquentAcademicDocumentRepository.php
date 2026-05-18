@@ -1,50 +1,64 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Modules\AcademicDocuments\Infrastructure\Database\Repositories;
 
+use App\Modules\AcademicDocuments\Domain\Entities\AcademicDocument as AcademicDocumentEntity;
 use App\Modules\AcademicDocuments\Domain\Repositories\AcademicDocumentRepositoryInterface;
-use App\Modules\AcademicDocuments\Domain\Entities\AcademicDocument;
 use App\Modules\AcademicDocuments\Infrastructure\Database\Models\AcademicDocument;
 
 class EloquentAcademicDocumentRepository implements AcademicDocumentRepositoryInterface
 {
-    public function findById(string $id): ?AcademicDocument
+    public function save(AcademicDocumentEntity $document): void
     {
-        $model = AcademicDocument::find($id);
-        
-        if (!$model) {
-            return null;
-        }
-        
-        return $this->toDomain($model);
+        $model = AcademicDocument::firstOrNew(['uuid' => $document->uuid()]);
+
+        $model->uuid          = $document->uuid();
+        $model->title         = $document->title()->value();
+        $model->filename      = $document->filename();
+        $model->mime_type     = $document->mimeType();
+        $model->size_bytes    = $document->sizeBytes();
+        $model->status        = $document->status()->value();
+        $model->error_message = $document->errorMessage();
+        $model->chroma_ids    = $document->chromaIds();
+        $model->uploaded_by   = $document->uploadedBy();
+
+        $model->save();
     }
-    
+
+    public function findByUuid(string $uuid): ?AcademicDocumentEntity
+    {
+        $model = AcademicDocument::where('uuid', $uuid)->first();
+
+        return $model ? $this->toDomain($model) : null;
+    }
+
     public function findAll(): array
     {
         return AcademicDocument::all()
-            ->map(fn($model) => $this->toDomain($model))
-            ->toArray();
+            ->map(fn(AcademicDocument $model) => $this->toDomain($model))
+            ->all();
     }
-    
-    public function save(AcademicDocument $AcademicDocument): void
+
+    public function delete(string $uuid): void
     {
-        $model = AcademicDocument::find($AcademicDocument->id()) ?? new AcademicDocument();
-        
-        // TODO: Mapear propiedades de la entidad al modelo
-        // $model->name = $AcademicDocument->name();
-        
-        $model->save();
+        AcademicDocument::where('uuid', $uuid)->delete();
     }
-    
-    public function delete(string $id): void
+
+    private function toDomain(AcademicDocument $model): AcademicDocumentEntity
     {
-        AcademicDocument::destroy($id);
-    }
-    
-    private function toDomain(AcademicDocument $model): AcademicDocument
-    {
-        // TODO: Implementar conversión de Model a Entity
-        throw new \RuntimeException('Implementar conversión de Model a Entity en toDomain()');
+        return AcademicDocumentEntity::reconstitute(
+            uuid:         $model->uuid,
+            title:        $model->title,
+            filename:     $model->filename,
+            mimeType:     $model->mime_type,
+            sizeBytes:    (int) $model->size_bytes,
+            status:       $model->status,
+            uploadedBy:   (int) $model->uploaded_by,
+            errorMessage: $model->error_message,
+            chromaIds:    $model->chroma_ids,
+            createdAt:    new \DateTimeImmutable($model->created_at->toAtomString()),
+        );
     }
 }

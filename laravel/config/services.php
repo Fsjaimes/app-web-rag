@@ -31,4 +31,12 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Microservicio FastAPI — RAG pipeline
+    // Dentro de Docker: http://fastapi:8000
+    // Fuera de Docker (tests locales): http://localhost:8000
+    'ai_service' => [
+        'url'     => env('AI_SERVICE_URL', 'http://fastapi:8000'),
+        'timeout' => (int) env('AI_SERVICE_TIMEOUT', 30),
+    ],
+
 ];

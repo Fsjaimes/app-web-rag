@@ -113,19 +113,19 @@ export default {
           <!-- Dark Logo-->
           <Link href="/dashboard" class="logo logo-dark">
             <span class="logo-sm">
-              <img src="@assets/images/Logo_TUT_Oscuro.png" alt="TUT" height="40" />
+              <img src="@assets/images/logo-verde-UTS.png" alt="UTS" height="40" />
             </span>
             <span class="logo-lg">
-              <img src="@assets/images/Logo_TUT_Oscuro.png" alt="TUT" height="60" />
+              <img src="@assets/images/logo-verde-UTS.png" alt="UTS" height="60" />
             </span>
           </Link>
           <!-- Light Logo-->
           <Link href="/dashboard" class="logo logo-light">
             <span class="logo-sm">
-              <img src="@assets/images/logo-sm-light.png" alt="TUT" height="40" />
+              <img src="@assets/images/escudo-UTS.png" alt="UTS" height="40" />
             </span>
             <span class="logo-lg">
-              <img src="@assets/images/Logo_TUT_Claro.png" alt="TUT" height="60" />
+              <img src="@assets/images/logo-blanco-UTS.png" alt="UTS" height="60" />
             </span>
           </Link>
           <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover"
