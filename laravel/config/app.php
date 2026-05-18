@@ -170,8 +170,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
         App\Providers\JetstreamServiceProvider::class,
-        //Services Providers
-        App\Modules\DocumentTypes\DocumentTypesServiceProvider::class,
+        //Services Providers — UTS Assistant
         App\Modules\AcademicDocuments\AcademicDocumentsServiceProvider::class,
         App\Modules\Assistants\AssistantsServiceProvider::class,
     ])->toArray(),
