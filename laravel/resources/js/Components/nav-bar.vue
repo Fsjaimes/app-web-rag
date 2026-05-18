@@ -21,12 +21,6 @@ import china from "@assets/images/flags/china.svg";
 import french from "@assets/images/flags/french.svg";
 import ae from "@assets/images/flags/ae.svg";
 
-import img1 from "@assets/images/products/img-1.png";
-import img2 from "@assets/images/products/img-2.png";
-import img3 from "@assets/images/products/img-3.png";
-import img4 from "@assets/images/products/img-4.png";
-import img5 from "@assets/images/products/img-5.png";
-
 /**
  * Nav-bar Component
  */
@@ -73,48 +67,6 @@ export default {
         language: "ar",
         title: "Arabic",
       },
-      ],
-      cartItems: [
-        {
-          id: 1,
-          productImage: img1,
-          productName: "Branded T-Shirts",
-          productLink: "/ecommerce/product-details",
-          quantity: "10 x $32",
-          itemPrice: "320",
-        },
-        {
-          id: 2,
-          productImage: img2,
-          productName: "Bentwood Chair",
-          productLink: "/ecommerce/product-details",
-          quantity: "5 x $18",
-          itemPrice: "89",
-        },
-        {
-          id: 3,
-          productImage: img3,
-          productName: "Borosil Paper Cup",
-          productLink: "/ecommerce/product-details",
-          quantity: "3 x $250",
-          itemPrice: "750",
-        },
-        {
-          id: 4,
-          productImage: img4,
-          productName: "Gray Styled T-Shirt",
-          productLink: "/ecommerce/product-details",
-          quantity: "1 x $1250",
-          itemPrice: "1250",
-        },
-        {
-          id: 5,
-          productImage: img5,
-          productName: "Stillbird Helmet",
-          productLink: "/ecommerce/product-details",
-          quantity: "2 x $495",
-          itemPrice: "990",
-        },
       ],
       lan: i18n.locale,
       text: null,
@@ -270,17 +222,9 @@ export default {
         mode: mode,
       });
     },
-    removeItem(cartItem) {
-      this.cartItems = this.cartItems.filter(item => item.id !== cartItem.id)
-      this.$emit("cart-item-price", this.cartItems.length);
-    },
   },
 
-  computed: {
-    calculateTotalPrice() {
-      return this.cartItems.reduce((total, item) => total + parseFloat(item.itemPrice), 0).toFixed(2);
-    },
-  },
+  computed: {},
   mounted() {
     this.flag = this.$i18n.locale;
     this.languages.forEach((item) => {
