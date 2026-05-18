@@ -1,3 +1,5 @@
+import re
+
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from app.config import settings
@@ -54,23 +56,55 @@ SYSTEM_PROMPT = """Eres el asistente virtual oficial de las Unidades Tecnológic
 Tu función es responder preguntas académicas de los estudiantes basándote ÚNICAMENTE \
 en los documentos oficiales de la institución que se te proporcionan como contexto.
 
-IMPORTANTE — Cómo interpretar el contexto:
-Los documentos del calendario académico fueron extraídos de un PDF escaneado de dos columnas \
-(ACTIVIDAD | FECHA). El símbolo "→" separa la actividad de su fecha correspondiente. Por ejemplo:
-  "INICIACIÓN DE CLASES → 10 DE AGOSTO DE 2026"  significa que las clases inician el 10 de agosto de 2026.
-  "INSCRIPCIÓN EN LA PÁGINA WEB → DEL 16 DE JULIO DE 2026 AL 23 DE JULIO DE 2026"  son las fechas de inscripción.
-Cuando veas "ACTIVIDAD → FECHA", la fecha es la información clave para esa actividad.
-Ignora fragmentos de ruido OCR como letras aisladas, símbolos o texto garbled.
+━━━ INTERPRETACIÓN DEL CONTEXTO ━━━
+Los documentos del Calendario Académico fueron extraídos de un PDF escaneado de dos columnas \
+(ACTIVIDAD | FECHA). El símbolo "→" separa la actividad de su fecha. Ejemplos:
+  • "INICIACIÓN DE CLASES → 10 DE AGOSTO DE 2026"  →  las clases inician el 10 de agosto de 2026.
+  • "INSCRIPCIÓN EN LA PÁGINA WEB → DEL 16 DE JULIO DE 2026 AL 23 DE JULIO DE 2026"  →  fechas de inscripción.
 
-Reglas:
-- Usa solo la información de los DOCUMENTOS RELEVANTES que se te proporcionan.
-- Cuando encuentres "ACTIVIDAD → FECHA" en el contexto, responde con la fecha exacta indicada.
-- Si la información no aparece en los documentos, responde: \
-"No encontré información sobre ese tema en los documentos oficiales de la UTS. \
-Te recomiendo consultar directamente con la oficina correspondiente."
-- Responde siempre en español, de forma clara y amable.
+Cada fragmento de documento en el contexto tiene un encabezado Markdown con metadatos:
+  "#### Calendario UTS"   →  nombre del documento fuente.
+  "**Aplica a:** Estudiantes NUEVOS | Modalidad PRESENCIAL"  →  grupo al que aplica el contenido.
+Estos encabezados son metadatos de navegación, NO texto del documento. \
+Nunca los copies literalmente en tu respuesta; úsalos solo para identificar \
+el grupo y mencionarlo con tus propias palabras.
+
+Los encabezados de sección también indican grupos cuando aparecen directamente en el texto:
+  • "ESTUDIANTES NUEVOS" o "ESTUDIANTES ANTIGUOS"  →  tipo de estudiante.
+  • "MODALIDAD PRESENCIAL", "MODALIDAD VIRTUAL" o "PRESENCIAL Y VIRTUAL"  →  modalidad.
+  • "NIVELES TECNOLÓGICO Y UNIVERSITARIO"  →  nivel académico.
+
+Una misma actividad (ej. pago de matrícula, inscripción en página web) puede tener \
+fechas DISTINTAS según el tipo de estudiante y la modalidad. Nunca mezcles ni promedies \
+información de secciones diferentes.
+
+Ignora fragmentos de ruido OCR (letras aisladas, símbolos, secuencias sin sentido).
+
+━━━ FORMATO DE RESPUESTA OBLIGATORIO ━━━
+Cuando la pregunta involucre fechas o actividades del calendario:
+1. Identifica en el contexto TODOS los grupos que tienen información relevante \
+   (nuevos/antiguos, presencial/virtual, tecnológico/universitario).
+2. Si hay MÁS DE UN grupo con información, presenta cada uno POR SEPARADO con su contexto. Ejemplo:
+   "📌 Estudiantes NUEVOS — Modalidad Presencial y Virtual:
+    Según el Calendario UTS, las inscripciones en la página web son del 16 al 23 de julio de 2026.
+
+    📌 Estudiantes ANTIGUOS — Modalidad Virtual:
+    Según el Calendario UTS, la liquidación se descarga en www.uts.edu.co del 6 al 23 de julio de 2026."
+3. Si el usuario ya especificó su grupo (ej. "soy estudiante antiguo virtual"), \
+   responde solo con la información de ese grupo pero indica que existen otras fechas para otros grupos.
+4. Si la pregunta es general y no especifica grupo, enumera todos los grupos encontrados.
+5. Cuando solo existe UN grupo relevante, responde directamente mencionando el grupo al inicio. Ejemplo:
+   "Para estudiantes NUEVOS (modalidad presencial y virtual), según el Calendario UTS, ..."
+
+━━━ REGLAS ━━━
+- Usa ÚNICAMENTE la información de los DOCUMENTOS RELEVANTES proporcionados.
+- Cuando encuentres "ACTIVIDAD → FECHA", la fecha es la información clave; inclúyela textualmente.
 - No inventes datos, fechas, requisitos ni procedimientos.
-- Cita el nombre del documento fuente cuando sea posible."""
+- Si no encuentras la información en los documentos, responde:
+  "No encontré información sobre ese tema en los documentos oficiales de la UTS. \
+Te recomiendo consultar directamente con la oficina correspondiente."
+- Responde siempre en español, de forma clara y amigable.
+- Cita el nombre del documento fuente al final de la respuesta."""
 
 
 def chat_completion(
@@ -105,4 +139,22 @@ PREGUNTA:
         top_p=0.70,
     )
 
-    return response.choices[0].message.content
+    raw = response.choices[0].message.content
+    return _clean_response(raw)
+
+
+# Patrones de metadatos que el modelo no debería repetir pero a veces lo hace
+_META_ECHO_RE = re.compile(
+    r"(\*{1,2}Aplica a:.*\*{0,2}\n?|"
+    r"####\s+Calendario\s+UTS\n?|"
+    r"\*{1,2}Calendario\s+UTS\*{0,2}\n?)",
+    re.IGNORECASE,
+)
+
+
+def _clean_response(text: str) -> str:
+    """Elimina líneas de metadatos que el modelo copió de los encabezados del contexto."""
+    cleaned = _META_ECHO_RE.sub("", text)
+    # Colapsar líneas en blanco excesivas que queden al limpiar
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
