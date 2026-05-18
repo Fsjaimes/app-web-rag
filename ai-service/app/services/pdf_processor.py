@@ -198,23 +198,92 @@ def _clean_text(text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Chunking
+# Chunking con propagación de encabezados de sección
 # ---------------------------------------------------------------------------
+
+# Patrones que identifican encabezados de sección del calendario UTS.
+# Cuando un chunk empieza sin uno de estos encabezados, se inyecta el último
+# encabezado activo para que el modelo siempre sepa a qué grupo aplica la info.
+_SECTION_HEADER_RE = re.compile(
+    r"ESTUDIANTES\s*(NUEVOS|ANTIGUOS)|"
+    r"MODALIDAD\s+(PRESENCIAL\s+Y\s+VIRTUAL|PRESENCIAL|VIRTUAL)|"
+    r"NIVELES?\s+TECNOL[ÓO]GICO(\s+Y\s+UNIVERSITARIO)?|"
+    r"NIVEL\s+(TECNOL[ÓO]GICO|UNIVERSITARIO)|"
+    r"ACTIVIDADES\s+DE\s+TRABAJO\s+DE\s+GRADO|"
+    r"CEREMONIAS\s+DE\s+GRADUACI[ÓO]N",
+    re.IGNORECASE,
+)
+
+# Etiquetas legibles para el prefijo [Contexto:]
+_SECTION_LABEL_MAP = [
+    ("estudiantes nuevos",          "Estudiantes NUEVOS"),
+    ("estudiantes antiguos",        "Estudiantes ANTIGUOS"),
+    ("modalidad presencial y virtual", "Modalidad PRESENCIAL Y VIRTUAL"),
+    ("modalidad presencial",        "Modalidad PRESENCIAL"),
+    ("modalidad virtual",           "Modalidad VIRTUAL"),
+    ("niveles tecnológico y universitario", "Niveles TECNOLÓGICO Y UNIVERSITARIO"),
+    ("niveles tecnológico",         "Nivel TECNOLÓGICO"),
+    ("nivel universitario",         "Nivel UNIVERSITARIO"),
+    ("trabajo de grado",            "Actividades de TRABAJO DE GRADO"),
+    ("graduación",                  "Ceremonias de GRADUACIÓN"),
+]
+
+
+def _normalise_line(line: str) -> str:
+    """
+    Une las dos partes de 'ACTIVIDAD → VALOR' en un solo texto para evaluación.
+    "ESTUDIANTES → NUEVOS" → "ESTUDIANTES NUEVOS"
+    Descarta la parte derecha si contiene una fecha real.
+    """
+    if re.search(r"→\s*(DEL\b|HASTA\b|AL\b|\d{1,2}\s+DE\b)", line, re.IGNORECASE):
+        # La flecha precede a una fecha → eliminar todo desde la flecha
+        return re.sub(r"\s*→.*", "", line).strip()
+    # No es fecha → unir ambas partes
+    return re.sub(r"\s*→\s*", " ", line).strip()
+
+
+def _is_section_header(line: str) -> bool:
+    """
+    Retorna True si la línea es un encabezado de sección del calendario
+    (tipo de estudiante, modalidad o nivel) y NO una actividad con fecha.
+    """
+    clean = _normalise_line(line)
+    # Los encabezados son cortos (≤ 60 chars) y no mezclan actividad + fecha
+    if len(clean) > 70:
+        return False
+    return bool(_SECTION_HEADER_RE.search(clean))
+
+
+def _section_label(line: str) -> str:
+    """Convierte un encabezado raw en una etiqueta legible para el prefijo de contexto."""
+    clean = _normalise_line(line).lower()
+    # Normalizar tildes para comparación
+    clean = (clean
+             .replace("ó", "o").replace("é", "e")
+             .replace("á", "a").replace("í", "i").replace("ú", "u"))
+    for key, label in _SECTION_LABEL_MAP:
+        key_norm = (key
+                    .replace("ó", "o").replace("é", "e")
+                    .replace("á", "a").replace("í", "i").replace("ú", "u"))
+        if key_norm in clean:
+            return label
+    return _normalise_line(line)
+
 
 def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[str]:
     """
-    Divide el texto en chunks con solapamiento real (sliding window).
+    Divide el texto en chunks con solapamiento y propagación de sección.
 
-    El extractor espacial produce líneas separadas por '\\n' (no '\\n\\n'),
-    por lo que primero normaliza ambos tipos de separador a '\\n\\n' para
-    que el split por párrafos funcione correctamente.
-
-    Luego usa una ventana deslizante sobre las líneas individuales para
-    garantizar solapamiento entre chunks consecutivos.
+    Estrategia:
+    1. Normaliza separadores de línea.
+    2. Usa ventana deslizante sobre las líneas para respetar overlap.
+    3. Si un chunk nuevo comienza sin un encabezado de sección pero existe
+       uno activo de un chunk anterior, lo inyecta como primera línea del
+       chunk para que el LLM siempre tenga el contexto (ej. "ESTUDIANTES
+       ANTIGUOS / MODALIDAD VIRTUAL") junto a la actividad y fecha.
     """
-    # Normalizar: cada línea individual también funciona como separador
+    # Normalizar separadores
     normalized = re.sub(r"\n{2,}", "\n\n", text)
-    # Convertir líneas simples del calendario (ACTIVIDAD → FECHA) en párrafos propios
     normalized = re.sub(r"(?<!\n)\n(?!\n)", "\n\n", normalized)
 
     lines = [ln.strip() for ln in normalized.split("\n\n") if ln.strip()]
@@ -224,6 +293,36 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[st
 
     chunks: list[str] = []
     start_idx = 0
+
+    # Estado de sección activo — se actualiza con encabezados jerárquicos:
+    #   student_type : "Estudiantes NUEVOS" | "Estudiantes ANTIGUOS" | None
+    #   modality     : "Modalidad PRESENCIAL" | "Modalidad VIRTUAL" | ... | None
+    #   level        : "Niveles TECNOLÓGICO Y UNIVERSITARIO" | ... | None
+    #   special      : "Actividades de TRABAJO DE GRADO" | ... | None
+    ctx: dict = {"student": None, "modality": None, "level": None, "special": None}
+
+    def _update_ctx(header_line: str) -> None:
+        """Actualiza el contexto de sección según el encabezado detectado."""
+        label = _section_label(header_line)
+        lbl_low = label.lower()
+        if "estudiantes" in lbl_low:
+            ctx["student"] = label
+            # Cambio de tipo de estudiante → resetear modalidad y especial
+            ctx["modality"] = None
+            ctx["special"] = None
+        elif "modalidad" in lbl_low:
+            ctx["modality"] = label
+        elif "nivel" in lbl_low:
+            ctx["level"] = label
+        elif "trabajo de grado" in lbl_low or "graduación" in lbl_low:
+            ctx["special"] = label
+            ctx["student"] = None
+            ctx["modality"] = None
+
+    def _ctx_label() -> str:
+        """Devuelve una etiqueta legible del contexto actual."""
+        parts = [v for v in [ctx["special"] or ctx["student"], ctx["modality"], ctx["level"]] if v]
+        return " | ".join(parts)
 
     while start_idx < len(lines):
         current_lines: list[str] = []
@@ -241,16 +340,29 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> list[st
                 break
 
         if not current_lines:
-            # Línea individual más larga que chunk_size — incluirla completa
             current_lines = [lines[start_idx]]
+
+        # Actualizar el contexto con los encabezados encontrados en este chunk
+        for ln in current_lines:
+            if _is_section_header(ln):
+                _update_ctx(ln)
+
+        # Inyectar prefijo si el chunk no empieza con un encabezado de sección
+        # y hay contexto activo y el chunk tiene contenido de calendario
+        first_line = current_lines[0]
+        ctx_str = _ctx_label()
+        if ctx_str and not _is_section_header(first_line):
+            has_calendar_content = any("→" in ln for ln in current_lines)
+            if has_calendar_content:
+                current_lines = [f"[Contexto: {ctx_str}]"] + current_lines
 
         chunks.append("\n".join(current_lines))
 
-        # Avanzar omitiendo las primeras líneas del chunk actual,
-        # conservando las últimas `overlap` caracteres como solapamiento.
+        # Avanzar con solapamiento (no contar la línea de contexto inyectada)
+        real_lines = [ln for ln in current_lines if not ln.startswith("[Contexto:")]
         consumed_size = 0
         advance = 0
-        for ln in current_lines:
+        for ln in real_lines:
             consumed_size += len(ln) + 2
             if consumed_size > chunk_size - overlap:
                 break
