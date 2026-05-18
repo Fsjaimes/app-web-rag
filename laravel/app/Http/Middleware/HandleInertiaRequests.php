@@ -46,7 +46,12 @@ class HandleInertiaRequests extends Middleware
                 if (!$request->user()) {
                     return [];
                 }
-                return $this->listDocumentTypesHandler->handle(['status' => 1])->toArray();
+                try {
+                    return $this->listDocumentTypesHandler->handle(['status' => 1])->toArray();
+                } catch (\Throwable) {
+                    // La conexión tenant no está disponible en este entorno (standalone).
+                    return [];
+                }
             },
         ]);
     }
